@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
 
+import sys
+import os
+import glob
 import numpy as np
 import adios2
+
+
+if (len(sys.argv) != 2):
+    print("Need input directory")
+    sys.exit(1)
+
+# Open input dir and get file list
+in_dir = sys.argv[1]
+assert os.path.isdir(in_dir), "{} does not seem to exist".format(in_dir)
+_flist = glob.glob("{}/*.grid".format(in_dir))
+print("Found {} files in {}".format(len(_flist), in_dir))
+flist = [f.split(".grid")[0] for f in _flist]
 
 
 # ADIOS initializations
@@ -22,10 +37,14 @@ var_gridnum = io.DefineVariable('grid_numbers', _celldata,
 _ndarray = np.empty((32,32,32), dtype=np.float32)
 var_griddata = io.DefineVariable('griddata', _ndarray,
         [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
+var_O = io.DefineVariable('O', _ndarray,
+        [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
+var_si = io.DefineVariable('si', _ndarray,
+        [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
 
 
 # Read raw data and write to ADIOS fle
-for fname in ["ACO", "LTA"]:
+for fname in flist:
     gridf = "{}.grid".format(fname)
     griddataf = "{}.griddata".format(fname)
     of = "{}.O".format(fname)
@@ -39,6 +58,8 @@ for fname in ["ACO", "LTA"]:
     grid_numbers = np.float_(lines[2].split()[1:])
 
     griddata = np.fromfile(griddataf, dtype=np.float32)
+    Odata = np.fromfile(of, dtype=np.float32)
+    sidata = np.fromfile(sif, dtype=np.float32)
     # np.savetxt("{}.txt".format(griddataf), griddata)
 
     en.BeginStep()
@@ -46,7 +67,11 @@ for fname in ["ACO", "LTA"]:
     en.Put(var_cellangles, cell_angles)
     en.Put(var_gridnum, grid_numbers)
     en.Put(var_griddata, griddata)
+    en.Put(var_O, Odata)
+    en.Put(var_si, sidata)
     en.EndStep()
 
 en.Close()
  
+print("Done.")
+
