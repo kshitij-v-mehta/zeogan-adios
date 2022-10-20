@@ -49,6 +49,12 @@ def read_data(objname):
 
 
 def create_adios():
+    # ADIOS initializations
+    adios = adios2.ADIOS()
+    io = adios.DeclareIO("writer")
+    io.SetParameter("engine", "BP5")
+    en = io.Open("test.bp", adios2.Mode.Write)
+    
     # Define variables
     _celldata = np.empty((3))
     var_cellparams = io.DefineVariable('cell_parameters', _celldata,
@@ -90,13 +96,10 @@ def create_adios():
         stepcount = stepcount + 1
         print("Step {}".format(stepcount), flush=True)
 
+    en.Close()
+
 
 # -------------------------------------------------------------------------- #
-# ADIOS initializations
-adios = adios2.ADIOS()
-io = adios.DeclareIO("writer")
-en = io.Open("test.bp", adios2.Mode.Write)
-    
 # Get list of data items in the directory
 flist = get_flist()
 
@@ -109,6 +112,5 @@ with ThreadPoolExecutor(max_workers=None) as executor:
 
 q.join()
 
-en.Close()
 print("Done")
 
