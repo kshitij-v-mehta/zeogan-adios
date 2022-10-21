@@ -22,7 +22,6 @@ def get_flist():
         for fname in gridfnames:
             flist.append(fname.rsplit('/',1)[-1].split(".grid")[0])
 
-        print(flist)
         return flist
     
     except Exception as e:
