@@ -16,6 +16,10 @@ adios_fname = "test.bp"
 q = queue.Queue()
 
 def get_flist():
+    """
+    Get a list of object names. e.g. 'x' is the object name for files
+    x.grid, x.griddata, x.O, x.si.
+    """
     try:
         flist = []
         gridfnames = glob.glob("{}/*.grid".format(rootdir))
@@ -30,6 +34,10 @@ def get_flist():
 
 
 def read_data(objname):
+    """
+    Read in all data (.grid, .griddata, .O, .si) for an object.
+    Store it in a dict and add it to the queue.
+    """
     try:
         objpath = '{}/{}'.format(rootdir,objname)
         
@@ -60,6 +68,10 @@ def read_data(objname):
 
 
 def create_adios():
+    """
+    This is the ADIOS file creator.
+    Get object data from the queue and store each object as an ADIOS step.
+    """
     try:
         # ADIOS initializations
         adios = adios2.ADIOS()
