@@ -76,7 +76,7 @@ def create_adios():
         # ADIOS initializations
         adios = adios2.ADIOS()
         io = adios.DeclareIO("writer")
-        io.SetParameter("engine", "BP5")
+        io.SetEngine("BP5")
         en = io.Open("{}/{}".format(rootdir,adios_fname), adios2.Mode.Write)
         
         # Define variables
