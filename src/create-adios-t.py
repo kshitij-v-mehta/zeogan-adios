@@ -9,23 +9,24 @@ import numpy as np
 import adios2
 
 
+rootdir = "/mnt/bb/kmehta/zeogan"
 q = queue.Queue()
 
 def get_flist():
     flist = []
-    fname = "file_list.txt"
+    fname = "{}/file_list.txt".format(rootdir)
     with open(fname) as f:
         lines = f.readlines()
 
     for line in lines:
-        objname = line.split("/")[1].split(".grid")[0]
+        objname = line.split(".grid")[0]
         flist.append(objname)
 
     return flist
 
 
 def read_data(objname):
-    objpath = './206/{}'.format(objname)
+    objpath = '{}/brett_gan_dataset/{}'.format(rootdir,objname)
     
     gridf     = objpath + ".grid"
     griddataf = objpath + ".griddata"
@@ -49,28 +50,32 @@ def read_data(objname):
 
 
 def create_adios():
-    # ADIOS initializations
-    adios = adios2.ADIOS()
-    io = adios.DeclareIO("writer")
-    io.SetParameter("engine", "BP5")
-    en = io.Open("test.bp", adios2.Mode.Write)
+    try:
+        # ADIOS initializations
+        adios = adios2.ADIOS()
+        io = adios.DeclareIO("writer")
+        io.SetParameter("engine", "BP5")
+        en = io.Open("{}/test.bp".format(rootdir), adios2.Mode.Write)
+        
+        # Define variables
+        _celldata = np.empty((3))
+        var_cellparams = io.DefineVariable('cell_parameters', _celldata,
+                [], [], list(np.shape(_celldata)), adios2.ConstantDims)
+        var_cellangles = io.DefineVariable('cell_angles', _celldata,
+                [], [], list(np.shape(_celldata)), adios2.ConstantDims)
+        var_gridnum = io.DefineVariable('grid_numbers', _celldata,
+                [], [], list(np.shape(_celldata)), adios2.ConstantDims)
+        
+        _ndarray = np.empty((32,32,32), dtype=np.float32)
+        var_griddata = io.DefineVariable('griddata', _ndarray,
+                [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
+        var_O = io.DefineVariable('O', _ndarray,
+                [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
+        var_si = io.DefineVariable('si', _ndarray,
+                [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
     
-    # Define variables
-    _celldata = np.empty((3))
-    var_cellparams = io.DefineVariable('cell_parameters', _celldata,
-            [], [], list(np.shape(_celldata)), adios2.ConstantDims)
-    var_cellangles = io.DefineVariable('cell_angles', _celldata,
-            [], [], list(np.shape(_celldata)), adios2.ConstantDims)
-    var_gridnum = io.DefineVariable('grid_numbers', _celldata,
-            [], [], list(np.shape(_celldata)), adios2.ConstantDims)
-    
-    _ndarray = np.empty((32,32,32), dtype=np.float32)
-    var_griddata = io.DefineVariable('griddata', _ndarray,
-            [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
-    var_O = io.DefineVariable('O', _ndarray,
-            [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
-    var_si = io.DefineVariable('si', _ndarray,
-            [], [], list(np.shape(_ndarray)), adios2.ConstantDims)
+    except Exception as e:
+        print("Exception in ADIOS initializations {}".format(e))
 
 
     # Iterate over the queue
@@ -110,6 +115,7 @@ with ThreadPoolExecutor(max_workers=None) as executor:
     # Launch I/O workers
     executor.map(read_data, flist)
 
+print("Done adding to queue {}".format(q.qsize()), flush=True)
 q.join()
 
 print("Done")
